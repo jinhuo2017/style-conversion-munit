@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, request, jsonify
 from server.predict import predict
-from util import generate_image_id
+from util import generate_image_id, allowed_file
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -11,18 +11,11 @@ app = Flask(__name__)
 base_dir = os.path.abspath(os.path.dirname(__file__))
 upload_relative_dir = 'results/uploads/'
 processed_relative_dir = 'results/processed/'
-# 允许的上传格式
-IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'JPG', 'PNG', 'JPEG', 'gif', 'GIF'}
 
 
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello World!'
-
-
-# 检查文件名是否规范：判断文件名是否包含'.'并且后缀在白名单列表中
-def allowed_file(filename):
-    return ('.' in filename) and (filename.rsplit('.', 1)[1] in IMAGE_EXTENSIONS)
 
 
 # 图片上传接口
