@@ -87,8 +87,12 @@ with torch.no_grad():
                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     input_str = opts.input_folder
     print(input_str)
+    # 定义支持的图片扩展名列表，包括大小写
+    image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+
     # bool 判断传入的字符串是否是个图片
-    isImg = input_str.endswith('.jpg') or input_str.endswith('.png') or input_str.endswith('.jpeg')
+    # 使用any和str.endswith来检查
+    isImg = any(input_str.endswith(ext) for ext in image_extensions)
 
     if (isImg):
         # 待补充的片段

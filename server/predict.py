@@ -5,17 +5,17 @@ base_upload_address = '../../results/uploads/'
 base_processed_address = '../../results/processed/'
 
 config_dict = {
-    'gta2city': './configs/gta2city.yaml',
-    'city2gta': './configs/gta2city.yaml',
-    'day2night': '/configs/bdd_d2n.yaml',
-    'night2day': '/configs/bdd_d2n.yaml',
-    'sunny2rainy': '/configs/bdd_sunny2rainy.yaml',
-    'rainy2sunny': '/configs/bdd_sunny2rainy.yaml',
+    'gta2city': os.path.join('./configs/gta2city.yaml'),
+    'city2gta': os.path.join('./configs/gta2city.yaml'),
+    'day2night': os.path.join('/configs/bdd_d2n.yaml'),
+    'night2day': os.path.join('/configs/bdd_d2n.yaml'),
+    'sunny2rainy': os.path.join('/configs/bdd_sunny2rainy.yaml'),
+    'rainy2sunny': os.path.join('/configs/bdd_sunny2rainy.yaml'),
 }
 
 checkpoint_dict = {
-    'gta2city': './outputs/gta2city/checkpoints/gen_00100000.pt',
-    'city2gta': './outputs/gta2city/checkpoints/gen_00100000.pt',
+    'gta2city': os.path.join('./outputs/gta2city/checkpoints/gen_00100000.pt'),
+    'city2gta': os.path.join('./outputs/gta2city/checkpoints/gen_00100000.pt'),
 }
 
 direction_dict = {
@@ -26,8 +26,8 @@ direction_dict = {
 
 def predict(input, task, username):
     config = config_dict.get(task)
-    input_folder = base_upload_address + username + input
-    output_folder = base_processed_address + username
+    input_folder = os.path.join(base_upload_address + username + '/' + input)
+    output_folder = os.path.join(base_processed_address + username)
     checkpoint = checkpoint_dict.get(task)
     a2b = direction_dict.get(task)
     # 构建命令
@@ -44,11 +44,11 @@ def predict(input, task, username):
     flask_dir = os.getcwd()
     print("cur_dir: ", flask_dir)
 
-    # 设置正确的工作目录
-    model_dir = flask_dir + '/server/munit'  # munit的目录路径
+    # munit的目录路径
+    model_dir = os.path.join(flask_dir, 'server/munit')
     os.chdir(model_dir)
 
-    res_dir = output_folder + input
+    res_dir = input
 
     # 执行命令
     try:
