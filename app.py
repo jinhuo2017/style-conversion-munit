@@ -149,8 +149,12 @@ def multi_convert():
         # username: username eg: jinhuoyang
         username = request.form.get('username')
         task = request.form.get('task')
-        # processed = predict_batch(input_list, task, username)#！！！！！！！！！！！等待predict_batch函数开发好之后改用此行！！！！！！！！！！！
-        processed = predict(input_list[1], task, username)#！！！！！！！！！！！！注意，当predict_batch函数开发好之后将此行注释掉，改用上一行！！！！！！！！！！！
+
+        input_str = ''
+        for img_name in input_list:
+            input_str += (img_name + ',')
+        input_str = input_str[:-1]
+        processed = predict(input_str, task, username)
 
         print(f"{input}转换完成")
         return jsonify({'code': 1, 'msg': 'success', 'data': {'processed': input_list}})

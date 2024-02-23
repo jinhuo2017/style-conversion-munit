@@ -26,7 +26,8 @@ direction_dict = {
 
 def predict(input, task, username):
     config = config_dict.get(task)
-    input_folder = os.path.join(base_upload_address + username + '/' + input)
+    input_folder = os.path.join(base_upload_address + username + '/')
+    image_list = input
     output_folder = os.path.join(base_processed_address + username)
     checkpoint = checkpoint_dict.get(task)
     a2b = direction_dict.get(task)
@@ -35,26 +36,23 @@ def predict(input, task, username):
         'python', 'test_folder_predict.py',
         '--config', config,
         '--input_folder', input_folder,
+        '--image_list', image_list,
         '--output_folder', output_folder,
         '--checkpoint', checkpoint,
         '--a2b', str(a2b)
     ]
 
+
     # 获取当前工作目录
     flask_dir = os.getcwd()
-    print("cur_dir: ", flask_dir)
-
-    # munit的目录路径
     model_dir = os.path.join(flask_dir, 'server/munit')
-    os.chdir(model_dir)
 
-    res_dir = input
+    # res_dir = input
 
     # 执行命令
     try:
-        subprocess.run(cmd, check=True)
-        os.chdir(flask_dir)
-        return res_dir
+        subprocess.run(cmd, check=True, cwd=model_dir)
+        return input
     except subprocess.CalledProcessError as e:
-        os.chdir(flask_dir)
         print(f"An predict error occurred: {e}")
+

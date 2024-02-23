@@ -15,7 +15,7 @@ from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
 
-from torchsummary import summary
+# from torchsummary import summary
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='configs/day2night_folder.yaml', help="net configuration")#day2night_folder gta2city bdd_sunny2rainy bdd_d2n
@@ -30,6 +30,7 @@ parser.add_argument('--synchronized', action='store_true', help="whether use syn
 parser.add_argument('--output_only', action='store_true', help="whether use synchronized style code or not")
 parser.add_argument('--output_path', type=str, default='.', help="path for logs, checkpoints, and VGG model weight")
 parser.add_argument('--trainer', type=str, default='MUNIT', help="MUNIT|UNIT")
+parser.add_argument('--image_list', type=str)
 opts = parser.parse_args()
 
 torch.manual_seed(opts.seed)
@@ -79,34 +80,22 @@ else:
         new_size = config['new_size_b']
 # new_size=(768,1280)
 # new_size = (760, 1280)
-new_size = (380, 640)
+# new_size = (380, 640)
 # new_size = (190, 320)
 with torch.no_grad():
-    transform = transforms.Compose([transforms.Resize(new_size),
-                                    transforms.ToTensor(),
+    transform = transforms.Compose([transforms.ToTensor(),
                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    input_str = opts.input_folder
-    print(input_str)
-    # 定义支持的图片扩展名列表，包括大小写
     image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
-
-    # bool 判断传入的字符串是否是个图片
-    # 使用any和str.endswith来检查
-    isImg = any(input_str.endswith(ext) for ext in image_extensions)
-
-    if (isImg):
-        # 待补充的片段
-        print("----img")
-
-        name = os.path.splitext(os.path.basename(input_str))[0]
-        print('name: ', name)
-        img_format = os.path.splitext(input_str)[1].replace('.', '')
-        print('img_format: ', img_format)
-
-        img_path = input_str
-
+    input_list = opts.image_list.split(',')
+    for img in tqdm(input_list):
+        if img == '':
+            continue
+        name = img.split('.')[0]
+        img_format = img.split('.')[1]
+        img_path = os.path.join(opts.input_folder, img)
         image = Variable(transform(Image.open(img_path).convert('RGB')).unsqueeze(0).cpu())
-        style_image = Variable(transform(Image.open(opts.style).convert('RGB')).unsqueeze(0).cpu()) if opts.style != '' else None
+        style_image = Variable(
+            transform(Image.open(opts.style).convert('RGB')).unsqueeze(0).cpu()) if opts.style != '' else None
 
         # Start testing
         content, _ = encode(image)
@@ -118,7 +107,6 @@ with torch.no_grad():
             else:
                 style = style_rand
             for j in range(opts.num_style):
-                print("j: ", j)
                 s = style[j].unsqueeze(0)
                 outputs = decode(content, s)
                 outputs = (outputs + 1) / 2.
@@ -126,40 +114,92 @@ with torch.no_grad():
                 vutils.save_image(outputs.data, path, padding=0, normalize=True)
                 # vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
 
+        else:
+            pass
 
-
-
-
-
-    else:
-        imgs = os.listdir(input_str)
-        for i, img in tqdm(enumerate(imgs)):
-            name = img.split('.')[0]
-            img_format = img.split('.')[1]
-            img_path = os.path.join(opts.input_folder, img)
-            image = Variable(transform(Image.open(img_path).convert('RGB')).unsqueeze(0).cpu())
-            style_image = Variable(transform(Image.open(opts.style).convert('RGB')).unsqueeze(0).cpu()) if opts.style != '' else None
-
-            # Start testing
-            content, _ = encode(image)
-
-            if opts.trainer == 'MUNIT':
-                style_rand = Variable(torch.randn(opts.num_style, style_dim, 1, 1).cpu())
-                if opts.style != '':
-                    _, style = style_encode(style_image)
-                else:
-                    style = style_rand
-                for j in range(opts.num_style):
-                    s = style[j].unsqueeze(0)
-                    outputs = decode(content, s)
-                    outputs = (outputs + 1) / 2.
-                    path = os.path.join(opts.output_folder, name+'.'+img_format.format(j))  ## bdd_s2r jpg else png
-                    vutils.save_image(outputs.data, path, padding=0, normalize=True)
-                    #vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
-
-            else:
-                pass
-
-            if opts.output_only:
+        if opts.output_only:
             # also save input images
-                vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
+            vutils.save_image(image.data, os.path.join(opts.output_folder, name + '_real.png'), padding=0,
+                              normalize=True)
+
+# transform = transforms.Compose([transforms.Resize(new_size),
+    #                                 transforms.ToTensor(),
+    #                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    # input_str = opts.input_folder
+    # print(input_str)
+    # # 定义支持的图片扩展名列表，包括大小写
+    # image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+    #
+    # # bool 判断传入的字符串是否是个图片
+    # # 使用any和str.endswith来检查
+    # isImg = any(input_str.endswith(ext) for ext in image_extensions)
+    #
+    # if (isImg):
+    #     # 待补充的片段
+    #     print("----img")
+    #
+    #     name = os.path.splitext(os.path.basename(input_str))[0]
+    #     print('name: ', name)
+    #     img_format = os.path.splitext(input_str)[1].replace('.', '')
+    #     print('img_format: ', img_format)
+    #
+    #     img_path = input_str
+    #
+    #     image = Variable(transform(Image.open(img_path).convert('RGB')).unsqueeze(0).cpu())
+    #     style_image = Variable(transform(Image.open(opts.style).convert('RGB')).unsqueeze(0).cpu()) if opts.style != '' else None
+    #
+    #     # Start testing
+    #     content, _ = encode(image)
+    #
+    #     if opts.trainer == 'MUNIT':
+    #         style_rand = Variable(torch.randn(opts.num_style, style_dim, 1, 1).cpu())
+    #         if opts.style != '':
+    #             _, style = style_encode(style_image)
+    #         else:
+    #             style = style_rand
+    #         for j in range(opts.num_style):
+    #             print("j: ", j)
+    #             s = style[j].unsqueeze(0)
+    #             outputs = decode(content, s)
+    #             outputs = (outputs + 1) / 2.
+    #             path = os.path.join(opts.output_folder, name + '.' + img_format.format(j))  ## bdd_s2r jpg else png
+    #             vutils.save_image(outputs.data, path, padding=0, normalize=True)
+    #             # vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
+    #
+    #
+    #
+    #
+    #
+    #
+    # else:
+    #     imgs = os.listdir(input_str)
+    #     for i, img in tqdm(enumerate(imgs)):
+    #         name = img.split('.')[0]
+    #         img_format = img.split('.')[1]
+    #         img_path = os.path.join(opts.input_folder, img)
+    #         image = Variable(transform(Image.open(img_path).convert('RGB')).unsqueeze(0).cpu())
+    #         style_image = Variable(transform(Image.open(opts.style).convert('RGB')).unsqueeze(0).cpu()) if opts.style != '' else None
+    #
+    #         # Start testing
+    #         content, _ = encode(image)
+    #
+    #         if opts.trainer == 'MUNIT':
+    #             style_rand = Variable(torch.randn(opts.num_style, style_dim, 1, 1).cpu())
+    #             if opts.style != '':
+    #                 _, style = style_encode(style_image)
+    #             else:
+    #                 style = style_rand
+    #             for j in range(opts.num_style):
+    #                 s = style[j].unsqueeze(0)
+    #                 outputs = decode(content, s)
+    #                 outputs = (outputs + 1) / 2.
+    #                 path = os.path.join(opts.output_folder, name+'.'+img_format.format(j))  ## bdd_s2r jpg else png
+    #                 vutils.save_image(outputs.data, path, padding=0, normalize=True)
+    #                 #vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
+    #
+    #         else:
+    #             pass
+    #
+    #         if opts.output_only:
+    #         # also save input images
+    #             vutils.save_image(image.data, os.path.join(opts.output_folder,  name+'_real.png'), padding=0, normalize=True)
