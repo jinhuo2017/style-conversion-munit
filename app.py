@@ -17,7 +17,7 @@ processed_relative_dir = 'results/processed/'
 
 @app.route('/')
 def hello_world():  # put application's code here
-    return 'Hello World!'
+    return 'Hello World!1'
 
 
 # 图片上传接口
