@@ -8,7 +8,7 @@ from server.predict import predict
 from util import generate_image_id, allowed_file
 from werkzeug.utils import secure_filename, redirect
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 
 app = Flask(__name__)
 # 数据库相关配置
@@ -42,6 +42,7 @@ def hello_world():  # put application's code here
     return 'Hello World!'
 
 
+# 用户登录
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -68,6 +69,15 @@ def login():
         # return redirect(url_for('login'))  # 重定向回登录页面
 
     # return render_template('login.html')
+    return jsonify({'code': 1004, 'msg': '返回登录页面'})
+
+
+# 用户登出
+@app.route('/logout')
+@login_required  # 用于视图保护
+def logout():
+    logout_user()  # 登出用户
+    flash('Goodbye.')
     return jsonify({'code': 1004, 'msg': '返回登录页面'})
 
 
