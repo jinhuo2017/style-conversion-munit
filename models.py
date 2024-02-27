@@ -1,8 +1,11 @@
-from app import db
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
+db = SQLAlchemy()
 
+
+# 定义Users类
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     # 用户名

@@ -1,13 +1,12 @@
 import os
 
-from flask import Flask, request, jsonify, make_response, send_from_directory, abort, flash
+from flask import Flask, request, jsonify, send_from_directory, flash
 from werkzeug.exceptions import NotFound
 
-from User import User
+from models import User, db
 from server.predict import predict
 from util import generate_image_id, allowed_file
-from werkzeug.utils import secure_filename, redirect
-from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 
 app = Flask(__name__)
@@ -19,7 +18,8 @@ PASSWORD = "root"
 DATABASE = "style_conversion"
 app.config[
     'SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8_general_ci'
-db = SQLAlchemy(app)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 # 获取flask项目所在目录: ./style-conversion-munit
 base_dir = os.path.abspath(os.path.dirname(__file__))
