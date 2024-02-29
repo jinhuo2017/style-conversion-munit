@@ -1,8 +1,11 @@
 import os
 
-from flask import Flask, request, jsonify, send_from_directory, flash
+from flask import Flask, request, jsonify, send_from_directory, flash, session
+from flask_wtf.csrf import generate_csrf
 from werkzeug.exceptions import NotFound
+from werkzeug.security import generate_password_hash
 
+from forms import RegistrationForm
 from models import User, db
 from server.predict import predict
 from util import generate_image_id, allowed_file
@@ -17,9 +20,15 @@ USERNAME = "root"
 PASSWORD = "root"
 DATABASE = "style_conversion"
 app.config[
-    'SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8_general_ci'
+    'SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'TfPcOu5'  # 用于保护表单
+app.config['WTF_CSRF_ENABLED'] = False
 db.init_app(app)
+
+
+with app.app_context():
+    db.create_all()
 
 # 获取flask项目所在目录: ./style-conversion-munit
 base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -42,6 +51,39 @@ def hello_world():  # put application's code here
     return 'Hello World!'
 
 
+# 生成csrf令牌
+@app.route('/csrf-token', methods=['GET'])
+def get_csrf_token():
+    # 生成 CSRF 令牌
+    token = generate_csrf()
+    print(token)
+    # 将 CSRF 令牌存储在 session 中
+    session['csrf_token'] = token
+    # 返回 CSRF 令牌
+    return jsonify({'csrf_token': token})
+
+
+#  用户注册
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+
+    if form.validate_on_submit():
+
+        password = form.password.data
+        password_hash = generate_password_hash(password)
+        user = User(username=form.username.data, password_hash=password_hash)
+
+        db.session.add(user)
+        db.session.commit()
+
+        flash('你的账号已经成功注册，现在可以登录了！', 'success')
+        return jsonify({'code': 0, 'msg': '注册成功'})
+    else:
+        print(form.errors)  # 打印出验证失败的错误信息
+    return jsonify({'code': 1005, 'msg': '返回注册页面'})
+
+
 # 用户登录
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -62,13 +104,9 @@ def login():
             login_user(user)
             flash('Login success.')
             return jsonify({'code': 0, 'msg': '登录成功'})
-            # return redirect(url_for('index'))  # 重定向到主页
 
         flash('Invalid username or password.')  # 如果验证失败，显示错误消息
         return jsonify({'code': 1003, 'msg': '无效的用户名或密码'})
-        # return redirect(url_for('login'))  # 重定向回登录页面
-
-    # return render_template('login.html')
     return jsonify({'code': 1004, 'msg': '返回登录页面'})
 
 
@@ -79,7 +117,6 @@ def logout():
     logout_user()  # 登出用户
     flash('Goodbye.')
     return jsonify({'code': 1004, 'msg': '返回登录页面'})
-
 
 
 # 图片上传接口
