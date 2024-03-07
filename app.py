@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from flask import Flask, request, jsonify, send_from_directory, flash, session
 from flask_wtf.csrf import generate_csrf
@@ -6,7 +7,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash
 
 from forms import RegistrationForm
-from models import User, db
+from models import User, db, ImageStatus
 from server.predict import predict
 from util import generate_image_id, allowed_file
 from werkzeug.utils import secure_filename
@@ -34,10 +35,79 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 upload_relative_dir = 'results/uploads/'
 processed_relative_dir = 'results/processed/'
 
+
+# 启动项目后扫库
+@app.before_first_request
+def initialize():
+    upload_dir = os.path.join(base_dir, upload_relative_dir)
+    processed_dir = os.path.join(base_dir, processed_relative_dir)
+
+    for username in os.listdir(upload_dir):
+        user_dir = os.path.join(upload_dir, username)
+        if os.path.isdir(user_dir):
+            # 遍历用户目录
+            for item in os.listdir(user_dir):
+                item_path = os.path.join(user_dir, item)
+                if os.path.isfile(item_path):
+                    # 如果是文件，处理文件
+                    process_file(username, item, processed_dir)
+                elif os.path.isdir(item_path):
+                    # 如果是文件夹，遍历文件夹内的文件
+                    for file in os.listdir(item_path):
+                        process_file(username, file, processed_dir, folder=item)
+
+
+# 处理文件
+def process_file(username, filename, processed_dir, folder=None):
+    try:
+        # filename格式: 2024022021416690.png
+        img_id, _ = os.path.splitext(filename)
+        if len(img_id) < 16:
+            raise ValueError("存在命名不规范的图片，请先把长度小于16位的图片删除/改名")
+        img_time_str = img_id[:12]  # 图片上传时间为图片名前12位，后四位为随机数
+        img_datetime = datetime.strptime(img_time_str, '%Y%m%d%H%M')  # 转换为datetime对象
+        img = filename # 直接保存 '2024022021416690.png' 字符串
+        type_ = 0 # 图片类型，是否在文件夹内：0不在，1在
+        status = 0 # 转换状态：0未转换，1转换
+
+        # 检查processed_relative_dir目录下是否有同名文件
+        if folder:
+            type_ = 1
+            processed_path = os.path.join(processed_dir, username, folder, filename)
+        else:
+            processed_path = os.path.join(processed_dir, username, filename)
+
+        if os.path.exists(processed_path):
+            status = 1
+
+        # 查询数据库中是否有该img_id的数据
+        record = ImageStatus.query.filter_by(img_id=img_id).first()
+        if record:
+            # 如果存在，检查status是否一致，不一致则更新
+            if record.status != status:
+                record.status = status
+                db.session.commit()
+        else:
+            # 如果不存在，添加新记录到数据库
+            new_record = ImageStatus(
+                img_id=img_id,
+                username=username,
+                date=img_datetime,
+                img=img,
+                type=type_,
+                folder=folder,
+                status=status
+            )
+            db.session.add(new_record)
+            db.session.commit()
+
+    except ValueError as e:
+        print(f"处理以下文件出错 '{filename}': {e}")
+
+
 # 实例化扩展类
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
-login_manager.login_message = '没有登录'
 
 
 @login_manager.unauthorized_handler
@@ -158,6 +228,8 @@ def upload():
 
         img_name = generate_image_id() + '.' + ext
         img.save(os.path.join(upload_dir, img_name))
+
+        # TODO 上传图片后在数据库里记录
         return jsonify({'code': 1, 'msg': 'success', 'data': {'img_name': img_name}})
     else:
         return jsonify({'code': 0, 'msg': '文件上传失败'})
@@ -180,6 +252,7 @@ def convert():
         processed = predict(input, task, username)
 
         print(f"{input}转换完成")
+        # TODO 处理图片后在数据库里记录
         return jsonify({'code': 1, 'msg': 'success', 'data': {'processed': processed}})
     return jsonify({'code': 0, 'msg': 'failed'})
 

@@ -42,7 +42,6 @@ def predict(input, task, username):
         '--a2b', str(a2b)
     ]
 
-
     # 获取当前工作目录
     flask_dir = os.getcwd()
     model_dir = os.path.join(flask_dir, 'server/munit')
@@ -55,4 +54,3 @@ def predict(input, task, username):
         return input
     except subprocess.CalledProcessError as e:
         print(f"An predict error occurred: {e}")
-
