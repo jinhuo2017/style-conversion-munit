@@ -26,7 +26,6 @@ app.config['SECRET_KEY'] = 'TfPcOu5'  # 用于保护表单
 app.config['WTF_CSRF_ENABLED'] = False
 db.init_app(app)
 
-
 with app.app_context():
     db.create_all()
 
@@ -37,6 +36,14 @@ processed_relative_dir = 'results/processed/'
 
 # 实例化扩展类
 login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message = '没有登录'
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    # 返回自定义的 JSON 响应
+    return jsonify({'code': 401, 'error': '请先登录'}), 401
 
 
 # 创建用户加载回调函数，接受用户 ID 作为参数
@@ -103,6 +110,7 @@ def login():
             # 登入用户
             login_user(user)
             flash('Login success.')
+            session['username'] = current_user.username
             return jsonify({'code': 0, 'msg': '登录成功'})
 
         flash('Invalid username or password.')  # 如果验证失败，显示错误消息
@@ -116,15 +124,19 @@ def login():
 def logout():
     logout_user()  # 登出用户
     flash('Goodbye.')
+    session.pop('username', None)
     return jsonify({'code': 1004, 'msg': '返回登录页面'})
 
 
 # 图片上传接口
 @app.route('/upload', methods=['post'])
+@login_required  # 登录保护
 def upload():
     # 定义文件路径，如果不存在就创建
-    username = request.form.get("username")
-    print("base_dir", base_dir)
+    # username = request.form.get("username")
+    # 直接从session中获取username
+    username = session.get('username')
+
     upload_dir = os.path.join(base_dir, upload_relative_dir + username + "/")
     processed_dir = os.path.join(base_dir, processed_relative_dir + username + "/")
     if not os.path.exists(upload_dir):
@@ -152,14 +164,18 @@ def upload():
 
 
 # 风格迁移接口
+@login_required  # 登录保护
 @app.route('/convert', methods=['GET', 'POST'])
 # 传参：给定的图片路径、任务名称
 def convert():
     if request.method == 'POST':
         # input: xxx.png eg: 0300.png
         input = request.form.get('input')
-        # username: username eg: jinhuoyang
-        username = request.form.get('username')
+        # username: username eg: tom
+        # username = request.form.get('username')
+        # 直接从session中获取username
+        username = session.get('username')
+
         task = request.form.get('task')
         processed = predict(input, task, username)
 
@@ -169,9 +185,13 @@ def convert():
 
 
 # 图片展示
+@login_required  # 登录保护
 @app.route('/show', methods=['GET'])
 def show_image():
-    username = request.args.get('username')
+    # username = request.args.get('username')
+    # 直接从session中获取username
+    username = session.get('username')
+
     # img_type 0: 原始图 1: 处理后的图像
     img_type = request.args.get('type')
     filename = request.args.get('filename')
