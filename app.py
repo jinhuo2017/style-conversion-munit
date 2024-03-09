@@ -302,6 +302,27 @@ def show_image():
         return "An error occurred while trying to send the file.", 500
 
 
+# 图片展示
+@login_required  # 登录保护
+@app.route('/history')
+def get_user_history():
+    # 直接从session中获取username
+    username = session.get('username')
+
+    # 查询数据库中该用户的所有状态数据
+    user_statuses = ImageStatus.query.filter_by(username=username, status = '1').all()
+
+    # 格式化数据
+    result_list = [status.history_to_dict() for status in user_statuses]
+    data = {
+        "count": len(result_list),
+        "result_list": result_list
+    }
+
+    # 返回JSON响应
+    return jsonify({"code": 0, "msg": "success", "data": data})
+
+
 ##############################################################################winggggggggggggggg
 from PIL import Image
 import io

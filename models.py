@@ -51,6 +51,13 @@ class ImageStatus(db.Model):
     def __repr__(self):
         return f'<ImageStatus {self.img}>'
 
+    def history_to_dict(self):
+        return {
+            "date": self.date.strftime("%Y-%m-%d"),
+            "img": self.img,
+            "folder": self.folder if self.folder else ""
+        }
+
 
 def save_image_status(img_id, img_name, username, type_, status, folder):
     # 查询数据库中是否有该img_id的数据
