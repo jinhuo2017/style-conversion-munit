@@ -6,6 +6,7 @@ from flask_wtf.csrf import generate_csrf
 from werkzeug.exceptions import NotFound
 from werkzeug.security import generate_password_hash
 
+import models
 from forms import RegistrationForm
 from models import User, db, ImageStatus
 from server.predict import predict
@@ -226,10 +227,15 @@ def upload():
         # 移除点号
         ext = ext[1:]
 
-        img_name = generate_image_id() + '.' + ext
+        img_id = generate_image_id()
+        img_name = img_id + '.' + ext
         img.save(os.path.join(upload_dir, img_name))
 
-        # TODO 上传图片后在数据库里记录
+        # 上传图片后在数据库里记录
+        type_ = 0 # 是否在文件夹中 0: 不在 1：在
+        status = 0 # 转换状态 0: 未转换 1: 已转换
+        models.save_image_status(img_id, img_name, username, type_, status, folder=None)
+
         return jsonify({'code': 1, 'msg': 'success', 'data': {'img_name': img_name}})
     else:
         return jsonify({'code': 0, 'msg': '文件上传失败'})
@@ -252,7 +258,10 @@ def convert():
         processed = predict(input, task, username)
 
         print(f"{input}转换完成")
-        # TODO 处理图片后在数据库里记录
+        # 处理图片后在数据库里记录
+        status = 1  # 转换状态 0: 未转换 1: 已转换
+        models.update_image_status_by_img_and_status(input, status)
+
         return jsonify({'code': 1, 'msg': 'success', 'data': {'processed': processed}})
     return jsonify({'code': 0, 'msg': 'failed'})
 

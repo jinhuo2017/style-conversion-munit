@@ -25,7 +25,7 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
 
 
-# 定义History类
+# 定义ImageStatus类
 class ImageStatus(db.Model):
     __tablename__ = 'image_status'
 
@@ -50,3 +50,42 @@ class ImageStatus(db.Model):
 
     def __repr__(self):
         return f'<ImageStatus {self.img}>'
+
+
+def save_image_status(img_id, img_name, username, type_, status, folder):
+    # 查询数据库中是否有该img_id的数据
+    record = ImageStatus.query.filter_by(img_id=img_id).first()
+    if record:
+        # 如果存在，检查status是否一致，不一致则更新
+        if record.status != status:
+            record.status = status
+            db.session.commit()
+    else:
+        # 先对各个数据进行处理
+        img_time_str = img_id[:12]
+        img_datetime = datetime.strptime(img_time_str, '%Y%m%d%H%M')  # 转换为datetime对象
+
+        # 如果不存在，添加新记录到数据库
+        new_record = ImageStatus(
+            img_id=img_id,
+            username=username,
+            date=img_datetime,
+            img=img_name,
+            type=type_,
+            folder=folder,
+            status=status
+        )
+        db.session.add(new_record)
+        db.session.commit()
+
+
+# 根据文件名、用户名、转换状态更新image_status
+def update_image_status_by_img_and_status(input, status):
+    img_id = input[:16]
+    # 查询数据库中是否有该img_id的数据
+    record = ImageStatus.query.filter_by(img_id=img_id).first()
+    if record:
+        if record.status != status:
+            record.status = status
+            db.session.commit()
+
