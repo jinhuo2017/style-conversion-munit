@@ -330,10 +330,12 @@ import base64
 
 
 # 图片批量上传接口
+@login_required  # 登录保护
 @app.route('/multi-upload', methods=['POST'])
 def multi_upload():
     # 获取用户名
-    username = request.form.get("username")
+        # 直接从session中获取username
+    username = session.get('username')
     print("base_dir", base_dir)
     upload_dir = os.path.join(base_dir, upload_relative_dir + username + "/")
     processed_dir = os.path.join(base_dir, processed_relative_dir + username + "/")
@@ -362,6 +364,7 @@ def multi_upload():
 
 
 # 批量风格迁移接口
+@login_required  # 登录保护
 @app.route('/multi-convert', methods=['GET', 'POST'])
 # 传参：给定的图片路径、任务名称
 def multi_convert():
@@ -369,7 +372,8 @@ def multi_convert():
         # input: xxx.png eg: 0300.png
         input_list = request.form.getlist('input')
         # username: username eg: jinhuoyang
-        username = request.form.get('username')
+            # 直接从session中获取username
+        username = session.get('username')
         task = request.form.get('task')
 
         input_str = ''
@@ -384,9 +388,11 @@ def multi_convert():
 
 
 # 批量展示接口
+@login_required  # 登录保护
 @app.route('/multi-show', methods=['GET'])
 def multi_show_image():
-    username = request.args.get('username')
+        # 直接从session中获取username
+    username = session.get('username')
     # img_type 0: 原始图 1: 处理后的图像
     img_type = request.args.get('type')
     filename_list = request.args.getlist('filename')  # 将存储所有要展示的图片的名字，使用列表进行存储
