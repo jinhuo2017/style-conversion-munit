@@ -177,7 +177,7 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         # 验证用户名和密码是否一致
-        if username == user.username and user.validate_password(password):
+        if user is not None and username == user.username and user.validate_password(password):
             # 登入用户
             login_user(user)
             flash('Login success.')
