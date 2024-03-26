@@ -14,6 +14,10 @@ from util import generate_image_id, allowed_file
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
 
+from PIL import Image
+import io
+import base64
+
 app = Flask(__name__)
 # 数据库相关配置
 HOSTNAME = "127.0.0.1"
@@ -250,7 +254,6 @@ def convert():
         # input: xxx.png eg: 0300.png
         input = request.form.get('input')
         # username: username eg: tom
-        # username = request.form.get('username')
         # 直接从session中获取username
         username = session.get('username')
 
@@ -323,18 +326,11 @@ def get_user_history():
     return jsonify({"code": 0, "msg": "success", "data": data})
 
 
-##############################################################################winggggggggggggggg
-from PIL import Image
-import io
-import base64
-
-
 # 图片批量上传接口
 @login_required  # 登录保护
 @app.route('/multi-upload', methods=['POST'])
 def multi_upload():
-    # 获取用户名
-        # 直接从session中获取username
+    # 获取用户名, 直接从session中获取username
     username = session.get('username')
     print("base_dir", base_dir)
     upload_dir = os.path.join(base_dir, upload_relative_dir + username + "/")
@@ -354,12 +350,16 @@ def multi_upload():
             # 移除点号
             ext = ext[1:]
 
-            file_name = generate_image_id() + '.' + ext
+            img_id = generate_image_id()
+            file_name = img_id + '.' + ext
             file.save(os.path.join(upload_dir, file_name))
             filename_list.append(file_name)
-        #     return jsonify({'code': 1, 'msg': 'success', 'data': {'img_name': file_name}})
-        # else:
-        #     return jsonify({'code': 0, 'msg': '文件上传失败'})
+
+            # 上传图片后在数据库里记录
+            type_ = 1  # 是否在文件夹中 0: 不在 1：在
+            status = 0  # 转换状态 0: 未转换 1: 已转换
+            models.save_image_status(img_id, file_name, username, type_, status, folder=None)
+
     return jsonify({'code': 1, 'msg': 'success', 'data': {'img_name': filename_list}})
 
 
@@ -371,14 +371,16 @@ def multi_convert():
     if request.method == 'POST':
         # input: xxx.png eg: 0300.png
         input_list = request.form.getlist('input')
-        # username: username eg: jinhuoyang
-            # 直接从session中获取username
+        # 直接从session中获取username
         username = session.get('username')
         task = request.form.get('task')
 
         input_str = ''
         for img_name in input_list:
             input_str += (img_name + ',')
+            # 处理图片后在数据库里记录
+            status = 1  # 转换状态 0: 未转换 1: 已转换
+            models.update_image_status_by_img_and_status(img_name, status)
         input_str = input_str[:-1]
         processed = predict(input_str, task, username)
 
@@ -391,7 +393,7 @@ def multi_convert():
 @login_required  # 登录保护
 @app.route('/multi-show', methods=['GET'])
 def multi_show_image():
-        # 直接从session中获取username
+    # 直接从session中获取username
     username = session.get('username')
     # img_type 0: 原始图 1: 处理后的图像
     img_type = request.args.get('type')
@@ -423,7 +425,7 @@ def multi_show_image():
             if os.path.isfile(filepath):
                 with Image.open(filepath) as img:
                     byte_arr = io.BytesIO()
-                    img.save(byte_arr, format='PNG')  ########！！！！！！！！！此处仅支持png格式的图片，在编解码时均认为图片格式为png！！！！！！！！！！！
+                    img.save(byte_arr, format='PNG')  # 此处仅支持png格式的图片，在编解码时均认为图片格式为png
                     encoded_image = base64.encodebytes(byte_arr.getvalue()).decode('ascii')
                     image_data.append(encoded_image)
         return jsonify({'code': 1, 'msg': 'success', 'data': {'images': image_data}})
@@ -431,9 +433,6 @@ def multi_show_image():
         # 捕捉到任何发送过程中的异常，返回500内部服务器错误
         app.logger.error(f"Error while sending file {filename_list}: {str(e)}")
         return "An error occurred while trying to send the file.", 500
-
-
-###################################################################winggggggggggggggg
 
 
 if __name__ == '__main__':
