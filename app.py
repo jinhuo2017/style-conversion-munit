@@ -246,8 +246,8 @@ def upload():
 
 
 # 风格迁移接口
-@login_required  # 登录保护
 @app.route('/convert', methods=['GET', 'POST'])
+@login_required  # 登录保护
 # 传参：给定的图片路径、任务名称
 def convert():
     if request.method == 'POST':
@@ -270,8 +270,8 @@ def convert():
 
 
 # 图片展示
-@login_required  # 登录保护
 @app.route('/show', methods=['GET'])
+@login_required  # 登录保护
 def show_image():
     # username = request.args.get('username')
     # 直接从session中获取username
@@ -306,8 +306,8 @@ def show_image():
 
 
 # 图片展示
-@login_required  # 登录保护
 @app.route('/history')
+@login_required  # 登录保护
 def get_user_history():
     # 直接从session中获取username
     username = session.get('username')
@@ -327,8 +327,8 @@ def get_user_history():
 
 
 # 图片批量上传接口
-@login_required  # 登录保护
 @app.route('/multi-upload', methods=['POST'])
+@login_required  # 登录保护
 def multi_upload():
     # 获取用户名, 直接从session中获取username
     username = session.get('username')
@@ -364,8 +364,8 @@ def multi_upload():
 
 
 # 批量风格迁移接口
-@login_required  # 登录保护
 @app.route('/multi-convert', methods=['GET', 'POST'])
+@login_required  # 登录保护
 # 传参：给定的图片路径、任务名称
 def multi_convert():
     if request.method == 'POST':
@@ -390,8 +390,8 @@ def multi_convert():
 
 
 # 批量展示接口
-@login_required  # 登录保护
 @app.route('/multi-show', methods=['GET'])
+@login_required  # 登录保护
 def multi_show_image():
     # 直接从session中获取username
     username = session.get('username')
