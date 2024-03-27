@@ -297,6 +297,11 @@ def show_image():
         if not os.path.isdir(file_dir):
             raise NotFound(f"Image directory {file_dir} not found")
 
+        img_dir = os.path.join(file_dir, filename)
+        if not os.path.exists(img_dir):
+            print(f"Image {img_dir} not found")
+            return jsonify({'code': 1007, 'msg': '图片不存在'})
+
         # send_from_directory 安全发送位于指定文件夹中的文件
         return send_from_directory(file_dir, filename)
     except Exception as e:
