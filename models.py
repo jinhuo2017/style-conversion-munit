@@ -14,7 +14,7 @@ class User(db.Model, UserMixin):
     # 用户名
     username = db.Column(db.String(20))
     # 用户密码哈希值
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(255))
 
     # 设置密码，生成密码哈希值
     def set_password(self, password):

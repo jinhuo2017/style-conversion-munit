@@ -7,20 +7,28 @@ base_processed_address = '../../results/processed/'
 config_dict = {
     'gta2city': os.path.join('./configs/gta2city.yaml'),
     'city2gta': os.path.join('./configs/gta2city.yaml'),
-    'day2night': os.path.join('/configs/bdd_d2n.yaml'),
-    'night2day': os.path.join('/configs/bdd_d2n.yaml'),
-    'sunny2rainy': os.path.join('/configs/bdd_sunny2rainy.yaml'),
-    'rainy2sunny': os.path.join('/configs/bdd_sunny2rainy.yaml'),
+    'day2night': os.path.join('./configs/bdd_d2n.yaml'),
+    'night2day': os.path.join('./configs/bdd_d2n.yaml'),
+    'sunny2rainy': os.path.join('./configs/bdd_sunny2rainy.yaml'),
+    'rainy2sunny': os.path.join('./configs/bdd_sunny2rainy.yaml'),
 }
 
 checkpoint_dict = {
     'gta2city': os.path.join('./outputs/gta2city/checkpoints/gen_00100000.pt'),
     'city2gta': os.path.join('./outputs/gta2city/checkpoints/gen_00100000.pt'),
+    'day2night': os.path.join('./outputs/bdd_d2n/checkpoints/gen_00093000.pt'),
+    'night2day': os.path.join('./outputs/bdd_d2n/checkpoints/gen_00093000.pt'),
+    'sunny2rainy': os.path.join('./outputs/bdd_sunny2rainy/checkpoints/gen_00070000.pt'),
+    'rainy2sunny': os.path.join('./outputs/bdd_sunny2rainy/checkpoints/gen_00070000.pt'),
 }
 
 direction_dict = {
     'gta2city': 1,
-    'city2gta': 0
+    'city2gta': 0,
+    'day2night': 1,
+    'night2day': 0,
+    'sunny2rainy': 1,
+    'rainy2sunny': 0
 }
 
 

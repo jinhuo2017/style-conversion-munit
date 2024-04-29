@@ -13,12 +13,14 @@ from server.predict import predict
 from util import generate_image_id, allowed_file
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
+from flask_cors import CORS
 
 from PIL import Image
 import io
 import base64
 
 app = Flask(__name__)
+CORS(app)
 # 数据库相关配置
 HOSTNAME = "127.0.0.1"
 PORT = 3306
